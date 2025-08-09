@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>MCQ Test — TCS iON Style (Local)</title>
+
+<!-- PapaParse for CSV parsing -->
+<script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
+
+<style>
+:root{
+  --blue:#0b65c2; --light:#f6f8fb; --panel:#f1f5f9;
+  --green:#2e7d32; --red:#c62828; --amber:#f59e0b; --answered:#1976d2;
+  --purple:#7b1fa2; --muted:#666; --card-bg:#fff;
+  --nav-not-visited:#f8fafc; --nav-visited:#fff4e6; --nav-answered:#1976d2;
+  --nav-correct:#2e7d32; --nav-wrong:#c62828; --nav-review:#7b1fa2;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:Segoe UI,Roboto,Arial,sans-serif;background:var(--light);color:#111}
+.topbar{background:var(--blue);color:#fff;padding:12px 18px;display:flex;align-items:center;justify-content:space-between}
+.brand{font-weight:700;letter-spacing:0.2px}
+.controls{display:flex;gap:12px;align-items:center}
+.controls label{display:flex;gap:8px;align-items:center;color:#fff;font-size:14px;cursor:pointer}
+.switch{position:relative;width:46px;height:26px;background:#cfd8dc;border-radius:16px;cursor:pointer}
+.switch .knob{position:absolute;top:3px;left:3px;width:20px;height:20px;background:#fff;border-radius:50%;transition:all .18s}
+.switch.on{background:#2e7d32}
+.switch.on .knob{left:23px}
+.timer-box{background:rgba(255,255,255,0.06);padding:6px 10px;border-radius:6px;color:#fff;display:flex;gap:8px;align-items:center}
+.timer-display{font-weight:700;font-size:15px;letter-spacing:0.6px}
+.container{display:flex;gap:18px;padding:18px;max-width:1200px;margin:18px auto}
+.main{flex:1;background:var(--card-bg);border-radius:8px;padding:18px;box-shadow:0 6px 20px rgba(15,23,42,0.06)}
+.sidebar{width:280px;background:var(--panel);border-radius:8px;padding:14px;box-shadow:0 6px 20px rgba(15,23,42,0.04);height:700px;overflow:auto}
+.meta{display:flex;gap:12px;align-items:center;justify-content:space-between;margin-bottom:12px}
+.question-box{padding:14px;border-radius:8px;border:1px solid #eef2f7;background:#fff}
+.qnumber{font-weight:700;margin-bottom:8px}
+.qtext{font-size:18px;margin-bottom:12px}
+.options{display:block;gap:8px}
+.option{display:flex;align-items:center;gap:10px;padding:10px;border-radius:8px;border:1px solid #e6eef9;margin-bottom:8px;cursor:pointer;background:#fcfeff}
+.option input{transform:scale(1.05)}
+.option:hover{box-shadow:0 2px 10px rgba(11,65,194,0.06)}
+.option.correct{background:#e8f5e9;border-left:4px solid var(--green)}
+.option.wrong{background:#ffebee;border-left:4px solid var(--red)}
+.option.review{background:#f3e5f5;border-left:4px solid var(--purple)}
+.option .tag{margin-left:auto;font-size:12px;font-weight:700;color:#333}
+.btn{background:var(--blue);color:#fff;padding:10px 14px;border-radius:8px;border:none;cursor:pointer}
+.btn.secondary{background:#fff;color:var(--blue);border:1px solid rgba(11,65,194,0.12)}
+.nav-panel{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:12px}
+.qbtn{padding:10px;border-radius:6px;border:1px solid #e6eef9;background:#fff;cursor:pointer;font-weight:700}
+.qbtn.not-visited{background:var(--nav-not-visited);color:#444}
+.qbtn.visited{background:var(--nav-visited);color:var(--amber)}
+.qbtn.answered{background:var(--nav-answered);color:#fff}
+.qbtn.review{background:var(--nav-review);color:#fff}
+.qbtn.correct{background:var(--nav-correct);color:#fff}
+.qbtn.wrong{background:var(--nav-wrong);color:#fff}
+.legend{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
+.legend .item{display:flex;gap:6px;align-items:center;font-size:13px;color:var(--muted)}
+.badge{width:16px;height:12px;border-radius:3px;display:inline-block}
+.footer{display:flex;justify-content:space-between;align-items:center;margin-top:12px}
+.score-box{font-weight:700}
+.small{font-size:13px;color:#666}
+.tools{display:flex;gap:8px;align-items:center}
+.sample-link{color:#fff;text-decoration:underline;font-weight:600}
+.locked{opacity:0.5;pointer-events:none}
+@media (max-width:900px){.container{flex-direction:column}.sidebar{width:100%;height:auto}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">MCQ Test — TCS iON Style</div>
+  <div class="controls">
+    <label id="uploadLabel">➕ Upload CSV
+      <input id="csvInput" type="file" accept=".csv" style="display:none" />
+    </label>
+
+    <div style="display:flex;align-items:center;gap:12px;">
+      <div style="display:flex;align-items:center;gap:8px;color:#fff;font-size:14px">Timer</div>
+      <div id="timerSwitch" class="switch" title="Toggle timer"><div class="knob"></div></div>
+    </div>
+
+    <div class="timer-box" id="timerControls" style="display:none">
+      <label style="color:#fff;font-size:13px">Minutes</label>
+      <input id="duration" type="number" min="1" value="10" style="width:64px;padding:6px;border-radius:6px;border:0px" />
+      <div class="timer-display" id="timerDisplay">00:00</div>
+    </div>
+
+    <div style="margin-left:12px">
+      <a id="downloadSample" class="sample-link" href="#">Download sample CSV</a>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="main">
+    <div class="meta">
+      <div>
+        <div class="small">Questions Loaded: <span id="count">0</span></div>
+        <div class="small">Marking: <b>+1</b> correct, <b>-0.25</b> wrong, <b>0</b> unattended</div>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center">
+        <button id="startBtn" class="btn" disabled>Start Test</button>
+        <button id="submitBtn" class="btn secondary" disabled>Submit</button>
+        <button id="exportBtn" class="btn secondary" disabled>Export Results</button>
+      </div>
+    </div>
+
+    <div class="question-box locked" id="questionArea" style="display:none">
+      <div class="qnumber" id="qNo">Question 1</div>
+      <div class="qtext" id="qText">Upload CSV to load questions</div>
+      <div class="options" id="optionsList"></div>
+
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <button id="markReview" class="btn secondary" title="Mark/Unmark for Review">Mark for Review</button>
+        <div style="flex:1"></div>
+        <button id="prev" class="btn secondary">Previous</button>
+        <button id="next" class="btn secondary">Next</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="sidebar">
+    <div style="font-weight:800;margin-bottom:8px">Question Navigator</div>
+    <div class="nav-panel locked" id="navPanel"></div>
+
+    <div class="legend">
+      <div class="item"><span class="badge" style="background:var(--nav-not-visited);border:1px solid #e6eef9"></span> Not visited</div>
+      <div class="item"><span class="badge" style="background:var(--nav-visited)"></span> Visited (not answered)</div>
+      <div class="item"><span class="badge" style="background:var(--nav-answered)"></span> Answered</div>
+      <div class="item"><span class="badge" style="background:var(--nav-review)"></span> Marked for review</div>
+      <div class="item"><span class="badge" style="background:var(--nav-correct)"></span> Correct (after submit)</div>
+      <div class="item"><span class="badge" style="background:var(--nav-wrong)"></span> Wrong (after submit)</div>
+    </div>
+
+    <div class="footer">
+      <div class="small">Status</div>
+      <div class="score-box" id="sidebarScore">Answered: 0/0</div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* CSV format: Question,Opt1,Opt2,Opt3,Opt4,Opt5,CorrectIndex(1-5) */
+
+let questions = [], answers = [], visited = [], review = [];
+let current = 0, started = false, submitted = false;
+let timerOn = false, timerInterval = null, remainingSeconds = 0;
+
+const csvInput = document.getElementById('csvInput'), countEl = document.getElementById('count');
+const startBtn = document.getElementById('startBtn'), submitBtn = document.getElementById('submitBtn'), exportBtn = document.getElementById('exportBtn');
+const qNo = document.getElementById('qNo'), qText = document.getElementById('qText'), optionsList = document.getElementById('optionsList');
+const navPanel = document.getElementById('navPanel'), questionArea = document.getElementById('questionArea');
+const prevBtn = document.getElementById('prev'), nextBtn = document.getElementById('next');
+const timerSwitch = document.getElementById('timerSwitch'), timerControls = document.getElementById('timerControls');
+const durationInput = document.getElementById('duration'), timerDisplay = document.getElementById('timerDisplay');
+const sidebarScore = document.getElementById('sidebarScore'), downloadSample = document.getElementById('downloadSample');
+const uploadLabel = document.getElementById('uploadLabel'), markReviewBtn = document.getElementById('markReview');
+
+csvInput.addEventListener('change',(e)=>{
+  const file = e.target.files[0]; if(!file) return;
+  Papa.parse(file, {skipEmptyLines:true, complete: function(results){ loadQuestions(results.data); }});
+});
+
+const sampleCSV = `What type of virus uses computer hosts to reproduce itself?,Worm,Time bomb,Melissa virus,Micro virus,Macro virus,1
+Which protocol is used to send email?,HTTP,FTP,SMTP,ICMP,SSH,3
+What does URL stand for?,Unique Resource Locator,Uniform Resource Locator,Universal Resource Link,Unique Reference Locator,Universal Resource Locator,2
+2+2=?,1,2,3,4,5,4
+Capital of France?,London,Berlin,Paris,Rome,Madrid,3`;
+
+downloadSample.addEventListener('click',(e)=>{ e.preventDefault(); const blob=new Blob([sampleCSV],{type:'text/csv'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='sample_questions.csv'; a.click(); URL.revokeObjectURL(url); });
+
+function loadQuestions(rows){
+  questions = []; for(const r of rows){ if(!r || r.length < 7) continue; const q=(r[0]||'').toString().trim(); const opts=[r[1],r[2],r[3],r[4],r[5]].map(s=>(s||'').toString().trim()); const corr=parseInt((r[6]||'').toString().replace(/[^0-9]/g,''),10); if(!q) continue; if(!(corr>=1 && corr<=5)) continue; questions.push({question:q, options:opts, correct:corr}); }
+  answers = new Array(questions.length).fill(null); visited = new Array(questions.length).fill(false); review = new Array(questions.length).fill(false);
+  countEl.textContent = questions.length; buildNav(); startBtn.disabled = questions.length===0; submitBtn.disabled=true; exportBtn.disabled=true; questionArea.style.display='none'; submitted=false; updateSidebarScore(); lockNav(true);
+}
+
+function buildNav(){
+  navPanel.innerHTML=''; for(let i=0;i<questions.length;i++){ const btn=document.createElement('button'); btn.className='qbtn not-visited'; btn.textContent=i+1; btn.dataset.idx=i; btn.disabled=true; btn.addEventListener('click',()=>{ goTo(i); }); navPanel.appendChild(btn); }
+}
+
+function lockNav(lock){
+  const elems = document.querySelectorAll('.nav-panel, .question-box'); if(lock){ document.querySelector('.nav-panel').classList.add('locked'); document.getElementById('questionArea').classList.add('locked'); } else { document.querySelector('.nav-panel').classList.remove('locked'); document.getElementById('questionArea').classList.remove('locked'); }
+  const btns = navPanel.querySelectorAll('.qbtn'); btns.forEach(b=> b.disabled = lock);
+}
+
+function goTo(idx){
+  if(idx<0||idx>=questions.length) return;
+  current = idx; visited[idx]=true;
+  if(submitted) renderSubmittedView(idx); else renderPreSubmit();
+  refreshNav();
+  questionArea.scrollIntoView({behavior:'smooth', block:'center'});
+}
+
+function renderPreSubmit(){
+  const q = questions[current]; qNo.textContent=`Question ${current+1}`; qText.textContent=q.question; optionsList.innerHTML='';
+  q.options.forEach((opt,i)=>{ const optNo=i+1; const div=document.createElement('div'); div.className='option'; if(review[current]) div.classList.add('review'); div.dataset.opt=optNo; div.innerHTML=`<input type="radio" name="opt" value="${optNo}" ${answers[current]===optNo?'checked':''} /> <span style="margin-left:10px">${opt}</span>`;
+    div.addEventListener('click',()=>{ if(submitted) return; answers[current]=optNo; const inp=div.querySelector('input'); if(inp) inp.checked=true; refreshNav(); updateSidebarScore(); renderPreSubmit(); });
+    optionsList.appendChild(div);
+  });
+  questionArea.style.display='block'; submitBtn.disabled=false; updateSidebarScore();
+}
+
+function refreshNav(){ const btns = navPanel.querySelectorAll('.qbtn'); btns.forEach(btn=>{ const i=parseInt(btn.dataset.idx,10); btn.className='qbtn'; if(review[i]) btn.classList.add('review'); else if(!visited[i]) btn.classList.add('not-visited'); else if(answers[i]===null) btn.classList.add('visited'); else btn.classList.add('answered'); }); }
+
+startBtn.addEventListener('click',()=>{ if(questions.length===0) return alert('Load questions first'); submitted=false; submitBtn.disabled=false; exportBtn.disabled=true; lockNav(false); goTo(0); if(timerOn) startTimer(); });
+
+prevBtn.addEventListener('click',()=>{ if(current>0) goTo(current-1); }); nextBtn.addEventListener('click',()=>{ if(current<questions.length-1) goTo(current+1); });
+
+submitBtn.addEventListener('click',()=>{ if(!confirm('Submit the test? You will not be able to change answers after submit.')) return; finalize(); });
+
+function finalize(auto=false){ submitted=true; if(timerInterval){ clearInterval(timerInterval); timerInterval=null; } let score=0, correctCount=0, wrongCount=0, unanswered=0; const btns = navPanel.querySelectorAll('.qbtn'); questions.forEach((q,i)=>{ const btn=btns[i]; if(answers[i]===null){ unanswered++; btn.className='qbtn not-visited'; } else if(answers[i]===q.correct){ score+=1; correctCount++; btn.className='qbtn correct'; } else { score-=0.25; wrongCount++; btn.className='qbtn wrong'; } }); renderSubmittedView(current); submitBtn.disabled=true; exportBtn.disabled=false; sidebarScore.textContent=`Score: ${score.toFixed(2)}`; setTimeout(()=>{ alert(`Test submitted.\nScore: ${score.toFixed(2)}\nCorrect: ${correctCount}\nWrong: ${wrongCount}\nUnanswered: ${unanswered}`); },50); }
+
+function renderSubmittedView(idx){ const q = questions[idx]; qNo.textContent=`Question ${idx+1}`; qText.textContent=q.question; optionsList.innerHTML=''; q.options.forEach((opt,i)=>{ const optNo=i+1; const div=document.createElement('div'); div.className='option'; if(optNo===q.correct) div.classList.add('correct'); if(answers[idx]!==null && answers[idx]===optNo && optNo!==q.correct) div.classList.add('wrong'); div.innerHTML=`<input type="radio" name="opt" value="${optNo}" ${answers[idx]===optNo?'checked':''} disabled /> <span style="margin-left:10px">${opt}</span>`; if(optNo===q.correct){ const tag=document.createElement('span'); tag.className='tag'; tag.textContent=' Correct'; div.appendChild(tag); } if(answers[idx]!==null && answers[idx]===optNo && optNo!==q.correct){ const tag=document.createElement('span'); tag.className='tag'; tag.textContent=' Your choice'; div.appendChild(tag); } optionsList.appendChild(div); }); }
+
+navPanel.addEventListener('click',(e)=>{ const el=e.target.closest('.qbtn'); if(!el) return; const idx=parseInt(el.dataset.idx,10); if(submitted){ renderSubmittedView(idx); current=idx; } else { goTo(idx); } });
+
+function setTimerSwitch(on){ timerOn=!!on; if(timerOn){ timerSwitch.classList.add('on'); timerControls.style.display='flex'; } else { timerSwitch.classList.remove('on'); timerControls.style.display='none'; if(timerInterval){ clearInterval(timerInterval); timerInterval=null; } timerDisplay.textContent='00:00'; } }
+timerSwitch.addEventListener('click',()=>{ setTimerSwitch(!timerOn); });
+
+function startTimer(){ const mins=Math.max(1,parseInt(durationInput.value,10)||0); remainingSeconds=mins*60; updateTimerDisplay(); if(timerInterval) clearInterval(timerInterval); timerInterval=setInterval(()=>{ remainingSeconds--; if(remainingSeconds<=0){ clearInterval(timerInterval); timerInterval=null; timerDisplay.textContent='00:00'; alert('Time is up. Submitting the test automatically.'); finalize(true); return; } updateTimerDisplay(); },1000); }
+function updateTimerDisplay(){ const mm=Math.floor(remainingSeconds/60).toString().padStart(2,'0'); const ss=(remainingSeconds%60).toString().padStart(2,'0'); timerDisplay.textContent=`${mm}:${ss}`; }
+
+function updateSidebarScore(){ const answeredCount=answers.filter(a=>a!==null).length; sidebarScore.textContent=`Answered: ${answeredCount}/${questions.length}`; }
+
+markReviewBtn.addEventListener('click',()=>{ if(submitted) return; review[current]=!review[current]; refreshNav(); renderPreSubmit(); });
+
+exportBtn.addEventListener('click',()=>{ const rows=[['Qno','Question','Chosen','Correct','Result','Marks']]; let total=0; questions.forEach((q,i)=>{ let result='Unanswered', marks=0, chosenText=''; if(answers[i]!==null) chosenText=q.options[answers[i]-1]; if(answers[i]===null){ result='Unanswered'; marks=0; } else if(answers[i]===q.correct){ result='Correct'; marks=1; } else { result='Wrong'; marks=-0.25; } total+=marks; rows.push([i+1,q.question,chosenText,q.options[q.correct-1],result,marks]); }); rows.push(['','','','','Total',total.toFixed(2)]); const csv = rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n'); const blob=new Blob([csv],{type:'text/csv'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='attempt_results.csv'; a.click(); URL.revokeObjectURL(url); });
+
+lockNav(true);
+</script>
+</body>
+</html>
