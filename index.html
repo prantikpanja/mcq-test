@@ -63,6 +63,10 @@ body{margin:0;font-family:Segoe UI,Roboto,Arial,sans-serif;background:var(--ligh
 .sample-link{color:#fff;text-decoration:underline;font-weight:600}
 .locked{opacity:0.5;pointer-events:none}
 @media (max-width:900px){.container{flex-direction:column}.sidebar{width:100%;height:auto}}
+
+label.locked { opacity: 0.6; pointer-events: none; cursor: default; }
+.switch.locked { pointer-events: none; opacity: 0.6; }
+
 </style>
 </head>
 <body>
@@ -112,6 +116,7 @@ body{margin:0;font-family:Segoe UI,Roboto,Arial,sans-serif;background:var(--ligh
 
       <div style="display:flex;gap:8px;margin-top:12px">
         <button id="markReview" class="btn" title="Mark/Unmark for Review">Mark for Review</button>
+        <button id="showRaw" class="btn secondary" title="Show raw CSV data for this question">Show Raw CSV</button>
         <div style="flex:1"></div>
         <button id="prev" class="btn">Previous</button>
         <button id="next" class="btn">Next</button>
@@ -169,10 +174,48 @@ Capital of France?,London,Berlin,Paris,Rome,Madrid,3`;
 
 downloadSample.addEventListener('click',(e)=>{ e.preventDefault(); const blob=new Blob([sampleCSV],{type:'text/csv'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='sample_questions.csv'; a.click(); URL.revokeObjectURL(url); });
 
+
+function decodeHTML(str){const txt=document.createElement('textarea');txt.innerHTML=str;return txt.value;}
+
+
+function disableControlsOnStart() {
+  startBtn.disabled = true;
+  if (csvInput) csvInput.disabled = true;
+  if (uploadLabel) uploadLabel.classList.add('locked');
+  if (timerSwitch) timerSwitch.classList.add('locked');
+  if (timerControls) {
+    Array.from(timerControls.querySelectorAll('input,button,select')).forEach(el => el.disabled = true);
+    timerControls.style.opacity = 0.9;
+  }
+}
+function enableControlsAfterFinish() {
+  startBtn.disabled = false;
+  if (csvInput) csvInput.disabled = false;
+  if (uploadLabel) uploadLabel.classList.remove('locked');
+  if (timerSwitch) timerSwitch.classList.remove('locked');
+  if (timerControls) {
+    Array.from(timerControls.querySelectorAll('input,button,select')).forEach(el => el.disabled = false);
+    timerControls.style.opacity = 1;
+  }
+}
+
 function loadQuestions(rows){
-  questions = []; for(const r of rows){ if(!r || r.length < 7) continue; const q=(r[0]||'').toString().trim(); const opts=[r[1],r[2],r[3],r[4],r[5]].map(s=>(s||'').toString().trim()); const corr=parseInt((r[6]||'').toString().replace(/[^0-9]/g,''),10); if(!q) continue; if(!(corr>=1 && corr<=5)) continue; questions.push({question:q, options:opts, correct:corr}); }
+  questions = []; for(const r of rows){ if(!r || r.length < 7) continue; const q = decodeHTML((r[0]||'').toString().trim()); const opts = [r[1],r[2],r[3],r[4],r[5]].map(s => decodeHTML((s||'').toString().trim())); const corr=parseInt((r[6]||'').toString().replace(/[^0-9]/g,''),10); if(!q) continue; if(!(corr>=1 && corr<=5)) continue; questions.push({question:q, options:opts, correct:corr}); }
   answers = new Array(questions.length).fill(null); visited = new Array(questions.length).fill(false); review = new Array(questions.length).fill(false);
-  countEl.textContent = questions.length; buildNav(); startBtn.disabled = questions.length===0; submitBtn.disabled=true; exportBtn.disabled=true; questionArea.style.display='none'; submitted=false; updateSidebarScore(); lockNav(true);
+  countEl.textContent = questions.length; buildNav(); startBtn.disabled = questions.length===0; submitBtn.disabled=true; exportBtn.disabled=true; questionArea.style.display='none'; submitted=false; updateSidebarScore(); 
+document.getElementById('showRaw').addEventListener('click', () => {
+  const q = questions[current];
+  if (!q) return alert("No question loaded.");
+  
+  let rawText = `Q${current+1} (Correct: ${q.correct})\n` +
+                `Question: ${q.question}\n` +
+                q.options.map((o, i) => `Opt${i+1}: ${o}`).join('\n');
+  
+  alert(rawText);
+});
+
+
+lockNav(true);
 }
 
 function buildNav(){
@@ -193,7 +236,7 @@ function goTo(idx){
 }
 
 function renderPreSubmit(){
-  const q = questions[current]; qNo.textContent=`Question ${current+1}`; qText.textContent=q.question; optionsList.innerHTML='';
+  const q = questions[current]; qNo.textContent=`Question ${current+1}`; qText.innerHTML = q.question; optionsList.innerHTML='';
   q.options.forEach((opt,i)=>{ const optNo=i+1; const div=document.createElement('div'); div.className='option'; if(review[current]) div.classList.add('review'); div.dataset.opt=optNo; div.innerHTML=`<input type="radio" name="opt" value="${optNo}" ${answers[current]===optNo?'checked':''} /> <span style="margin-left:10px">${opt}</span>`;
     div.addEventListener('click',()=>{ if(submitted) return; answers[current]=optNo; const inp=div.querySelector('input'); if(inp) inp.checked=true; refreshNav(); updateSidebarScore(); renderPreSubmit(); });
     optionsList.appendChild(div);
@@ -203,15 +246,17 @@ function renderPreSubmit(){
 
 function refreshNav(){ const btns = navPanel.querySelectorAll('.qbtn'); btns.forEach(btn=>{ const i=parseInt(btn.dataset.idx,10); btn.className='qbtn'; if(review[i]) btn.classList.add('review'); else if(!visited[i]) btn.classList.add('not-visited'); else if(answers[i]===null) btn.classList.add('visited'); else btn.classList.add('answered'); }); }
 
-startBtn.addEventListener('click',()=>{ if(questions.length===0) return alert('Load questions first'); submitted=false; submitBtn.disabled=false; exportBtn.disabled=true; lockNav(false); goTo(0); if(timerOn) startTimer(); });
+startBtn.addEventListener('click',()=>{ if(questions.length===0) return alert('Load questions first'); submitted=false; submitBtn.disabled=false; exportBtn.disabled=true; lockNav(false); goTo(0); disableControlsOnStart();
+  if(timerOn) startTimer(); });
 
 prevBtn.addEventListener('click',()=>{ if(current>0) goTo(current-1); }); nextBtn.addEventListener('click',()=>{ if(current<questions.length-1) goTo(current+1); });
 
 submitBtn.addEventListener('click',()=>{ if(!confirm('Submit the test? You will not be able to change answers after submit.')) return; finalize(); });
 
-function finalize(auto=false){ submitted=true; if(timerInterval){ clearInterval(timerInterval); timerInterval=null; } let score=0, correctCount=0, wrongCount=0, unanswered=0; const btns = navPanel.querySelectorAll('.qbtn'); questions.forEach((q,i)=>{ const btn=btns[i]; if(answers[i]===null){ unanswered++; btn.className='qbtn not-visited'; } else if(answers[i]===q.correct){ score+=1; correctCount++; btn.className='qbtn correct'; } else { score-=0.25; wrongCount++; btn.className='qbtn wrong'; } }); renderSubmittedView(current); submitBtn.disabled=true; exportBtn.disabled=false; sidebarScore.textContent=`Score: ${score.toFixed(2)}`; setTimeout(()=>{ alert(`Test submitted.\nScore: ${score.toFixed(2)}\nCorrect: ${correctCount}\nWrong: ${wrongCount}\nUnanswered: ${unanswered}`); },50); }
+function finalize(auto=false){ submitted=true;
+  enableControlsAfterFinish(); if(timerInterval){ clearInterval(timerInterval); timerInterval=null; } let score=0, correctCount=0, wrongCount=0, unanswered=0; const btns = navPanel.querySelectorAll('.qbtn'); questions.forEach((q,i)=>{ const btn=btns[i]; if(answers[i]===null){ unanswered++; btn.className='qbtn not-visited'; } else if(answers[i]===q.correct){ score+=1; correctCount++; btn.className='qbtn correct'; } else { score-=0.25; wrongCount++; btn.className='qbtn wrong'; } }); renderSubmittedView(current); submitBtn.disabled=true; exportBtn.disabled=false; sidebarScore.textContent=`Score: ${score.toFixed(2)}`; setTimeout(()=>{ alert(`Test submitted.\nScore: ${score.toFixed(2)}\nCorrect: ${correctCount}\nWrong: ${wrongCount}\nUnanswered: ${unanswered}`); },50); }
 
-function renderSubmittedView(idx){ const q = questions[idx]; qNo.textContent=`Question ${idx+1}`; qText.textContent=q.question; optionsList.innerHTML=''; q.options.forEach((opt,i)=>{ const optNo=i+1; const div=document.createElement('div'); div.className='option'; if(optNo===q.correct) div.classList.add('correct'); if(answers[idx]!==null && answers[idx]===optNo && optNo!==q.correct) div.classList.add('wrong'); div.innerHTML=`<input type="radio" name="opt" value="${optNo}" ${answers[idx]===optNo?'checked':''} disabled /> <span style="margin-left:10px">${opt}</span>`; if(optNo===q.correct){ const tag=document.createElement('span'); tag.className='tag'; tag.textContent=' Correct'; div.appendChild(tag); } if(answers[idx]!==null && answers[idx]===optNo && optNo!==q.correct){ const tag=document.createElement('span'); tag.className='tag'; tag.textContent=' Your choice'; div.appendChild(tag); } optionsList.appendChild(div); }); }
+function renderSubmittedView(idx){ const q = questions[idx]; qNo.textContent=`Question ${idx+1}`; qText.innerHTML = q.question; optionsList.innerHTML=''; q.options.forEach((opt,i)=>{ const optNo=i+1; const div=document.createElement('div'); div.className='option'; if(optNo===q.correct) div.classList.add('correct'); if(answers[idx]!==null && answers[idx]===optNo && optNo!==q.correct) div.classList.add('wrong'); div.innerHTML=`<input type="radio" name="opt" value="${optNo}" ${answers[idx]===optNo?'checked':''} disabled /> <span style="margin-left:10px">${opt}</span>`; if(optNo===q.correct){ const tag=document.createElement('span'); tag.className='tag'; tag.textContent=' Correct'; div.appendChild(tag); } if(answers[idx]!==null && answers[idx]===optNo && optNo!==q.correct){ const tag=document.createElement('span'); tag.className='tag'; tag.textContent=' Your choice'; div.appendChild(tag); } optionsList.appendChild(div); }); }
 
 navPanel.addEventListener('click',(e)=>{ const el=e.target.closest('.qbtn'); if(!el) return; const idx=parseInt(el.dataset.idx,10); if(submitted){ renderSubmittedView(idx); current=idx; } else { goTo(idx); } });
 
@@ -226,6 +271,19 @@ function updateSidebarScore(){ const answeredCount=answers.filter(a=>a!==null).l
 markReviewBtn.addEventListener('click',()=>{ if(submitted) return; review[current]=!review[current]; refreshNav(); renderPreSubmit(); });
 
 exportBtn.addEventListener('click',()=>{ const rows=[['Qno','Question','Chosen','Correct','Result','Marks']]; let total=0; questions.forEach((q,i)=>{ let result='Unanswered', marks=0, chosenText=''; if(answers[i]!==null) chosenText=q.options[answers[i]-1]; if(answers[i]===null){ result='Unanswered'; marks=0; } else if(answers[i]===q.correct){ result='Correct'; marks=1; } else { result='Wrong'; marks=-0.25; } total+=marks; rows.push([i+1,q.question,chosenText,q.options[q.correct-1],result,marks]); }); rows.push(['','','','','Total',total.toFixed(2)]); const csv = rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n'); const blob=new Blob([csv],{type:'text/csv'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='attempt_results.csv'; a.click(); URL.revokeObjectURL(url); });
+
+
+document.getElementById('showRaw').addEventListener('click', () => {
+  const q = questions[current];
+  if (!q) return alert("No question loaded.");
+  
+  let rawText = `Q${current+1} (Correct: ${q.correct})\n` +
+                `Question: ${q.question}\n` +
+                q.options.map((o, i) => `Opt${i+1}: ${o}`).join('\n');
+  
+  alert(rawText);
+});
+
 
 lockNav(true);
 </script>
