@@ -1,13 +1,12 @@
-<!doctype html>
+<!DOCTYPE html>
+
 <html lang="en">
 <head>
 <meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<meta content="width=device-width,initial-scale=1" name="viewport"/>
 <title>MCQ Test — for U C O</title>
-
 <!-- PapaParse for CSV parsing -->
 <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
-
 <style>
 :root{
   --blue:#0b65c2; --light:#f6f8fb; --panel:#f1f5f9;
@@ -70,78 +69,75 @@ label.locked { opacity: 0.6; pointer-events: none; cursor: default; }
 </style>
 </head>
 <body>
-
 <div class="topbar">
-  <div class="brand">MCQ Test — U C O</div>
-  <div class="controls">
-    <label id="uploadLabel">➕ Upload CSV
-      <input id="csvInput" type="file" accept=".csv" style="display:none" />
-    </label>
-
-    <div style="display:flex;align-items:center;gap:12px;">
-      <div style="display:flex;align-items:center;gap:8px;color:#fff;font-size:14px">Timer</div>
-      <div id="timerSwitch" class="switch" title="Toggle timer"><div class="knob"></div></div>
-    </div>
-
-    <div class="timer-box" id="timerControls" style="display:none">
-      <label style="color:#fff;font-size:13px">Minutes</label>
-      <input id="duration" type="number" min="1" value="10" style="width:64px;padding:6px;border-radius:6px;border:0px" />
-      <div class="timer-display" id="timerDisplay">00:00</div>
-    </div>
-
-    <div style="margin-left:12px">
-      <a id="downloadSample" class="sample-link" href="#">Download sample CSV</a>
-    </div>
-  </div>
+<div class="brand">MCQ Test — U C O</div>
+<div class="controls">
+<label id="uploadLabel">➕ Upload CSV
+      <input accept=".csv" id="csvInput" style="display:none" type="file"/>
+</label>
+<div style="display:flex;align-items:center;gap:12px;">
+<div style="display:flex;align-items:center;gap:8px;color:#fff;font-size:14px">Timer</div>
+<div class="switch" id="timerSwitch" title="Toggle timer"><div class="knob"></div></div>
 </div>
-
+<div class="timer-box" id="timerControls" style="display:none">
+<label style="color:#fff;font-size:13px">Minutes</label>
+<input id="duration" min="1" style="width:64px;padding:6px;border-radius:6px;border:0px" type="number" value="10"/>
+<div class="timer-display" id="timerDisplay">00:00</div>
+</div>
+<div style="margin-left:12px">
+<a class="sample-link" href="#" id="downloadSample">Download sample CSV</a>
+</div>
+<label id="pasteLabel" style="cursor:pointer;color:#fff;font-size:14px;display:flex;align-items:center;gap:8px;">📋 Paste CSV</label></div>
+</div>
 <div class="container">
-  <div class="main">
-    <div class="meta">
-      <div>
-        <div class="small">Questions Loaded: <span id="count">0</span></div>
-        <div class="small">Marking: <b>+1</b> correct, <b>-0.25</b> wrong, <b>0</b> unattended</div>
-      </div>
-      <div style="display:flex;gap:10px;align-items:center">
-        <button id="startBtn" class="btn" disabled>Start Test</button>
-        <button id="submitBtn" class="btn secondary" disabled>Submit</button>
-        <button id="exportBtn" class="btn secondary" disabled>Export Results</button>
-      </div>
-    </div>
-
-    <div class="question-box locked" id="questionArea" style="display:none">
-      <div class="qnumber" id="qNo">Question 1</div>
-      <div class="qtext" id="qText">Upload CSV to load questions</div>
-      <div class="options" id="optionsList"></div>
-
-      <div style="display:flex;gap:8px;margin-top:12px">
-        <button id="markReview" class="btn" title="Mark/Unmark for Review">Mark for Review</button>
-        <button id="showRaw" class="btn secondary" title="Show raw CSV data for this question">src</button>
-        <div style="flex:1"></div>
-        <button id="prev" class="btn">Previous</button>
-        <button id="next" class="btn">Next</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="sidebar">
-    <div style="font-weight:800;margin-bottom:8px">Question Navigator</div>
-    <div class="nav-panel locked" id="navPanel"></div>
-
-    <div class="legend">
-      <div class="item"><span class="badge" style="background:var(--nav-not-visited);border:1px solid #e6eef9"></span> Not visited</div>
-      <div class="item"><span class="badge" style="background:var(--nav-visited)"></span> Visited (not answered)</div>
-      <div class="item"><span class="badge" style="background:var(--nav-answered)"></span> Answered</div>
-      <div class="item"><span class="badge" style="background:var(--nav-review)"></span> Marked for review</div>
-      <div class="item"><span class="badge" style="background:var(--nav-correct)"></span> Correct (after submit)</div>
-      <div class="item"><span class="badge" style="background:var(--nav-wrong)"></span> Wrong (after submit)</div>
-    </div>
-
-    <div class="footer">
-      <div class="small">Status</div>
-      <div class="score-box" id="sidebarScore">Answered: 0/0</div>
-    </div>
-  </div>
+<div class="main">
+<div class="meta">
+<div>
+<div class="small">Questions Loaded: <span id="count">0</span></div>
+<div class="small">Marking: <b>+1</b> correct, <b>-0.25</b> wrong, <b>0</b> unattended</div>
+</div>
+<div style="display:flex;gap:10px;align-items:center">
+<button class="btn" disabled="" id="startBtn">Start Test</button>
+<button class="btn secondary" disabled="" id="submitBtn">Submit</button>
+<button class="btn secondary" disabled="" id="exportBtn">Export Results</button>
+</div>
+</div>
+<div class="question-box locked" id="questionArea" style="display:none">
+<div class="qnumber" id="qNo">Question 1</div>
+<div class="qtext" id="qText">Upload CSV to load questions</div>
+<div class="options" id="optionsList"></div>
+<div style="display:flex;gap:8px;margin-top:12px">
+<button class="btn" id="markReview" title="Mark/Unmark for Review">Mark for Review</button>
+<button class="btn secondary" id="showRaw" title="Show raw CSV data for this question">src</button>
+<div style="flex:1"></div>
+<button class="btn" id="prev">Previous</button>
+<button class="btn" id="next">Next</button>
+</div>
+</div>
+</div>
+<div class="sidebar">
+<div style="font-weight:800;margin-bottom:8px">Question Navigator</div>
+<div class="nav-panel locked" id="navPanel"></div>
+<div class="legend">
+<div class="item"><span class="badge" style="background:var(--nav-not-visited);border:1px solid #e6eef9"></span> Not visited</div>
+<div class="item"><span class="badge" style="background:var(--nav-visited)"></span> Visited (not answered)</div>
+<div class="item"><span class="badge" style="background:var(--nav-answered)"></span> Answered</div>
+<div class="item"><span class="badge" style="background:var(--nav-review)"></span> Marked for review</div>
+<div class="item"><span class="badge" style="background:var(--nav-correct)"></span> Correct (after submit)</div>
+<div class="item"><span class="badge" style="background:var(--nav-wrong)"></span> Wrong (after submit)</div>
+</div>
+<div class="footer">
+<div class="small">Status</div>
+<div class="score-box" id="sidebarScore">Answered: 0/0</div>
+</div>
+</div>
+</div>
+<div id="pasteArea" style="display:none;margin:12px 0;">
+<textarea id="csvTextarea" placeholder="Paste CSV data here" rows="6" style="width:100%;padding:8px;border:1px solid #ccc;border-radius:6px;"></textarea>
+<div style="margin-top:8px;">
+<button class="btn" id="loadPasteBtn">Load Pasted CSV</button>
+<button class="btn secondary" id="cancelPasteBtn">Cancel</button>
+</div>
 </div>
 
 <script>
@@ -199,24 +195,63 @@ function enableControlsAfterFinish() {
   }
 }
 
+
 function loadQuestions(rows){
-  questions = []; for(const r of rows){ if(!r || r.length < 7) continue; const q = decodeHTML((r[0]||'').toString().trim()); const opts = [r[1],r[2],r[3],r[4],r[5]].map(s => decodeHTML((s||'').toString().trim())); const corr=parseInt((r[6]||'').toString().replace(/[^0-9]/g,''),10); if(!q) continue; if(!(corr>=1 && corr<=5)) continue; questions.push({question:q, options:opts, correct:corr}); }
-  answers = new Array(questions.length).fill(null); visited = new Array(questions.length).fill(false); review = new Array(questions.length).fill(false);
-  countEl.textContent = questions.length; buildNav(); startBtn.disabled = questions.length===0; submitBtn.disabled=true; exportBtn.disabled=true; questionArea.style.display='none'; submitted=false; updateSidebarScore(); 
-document.getElementById('showRaw').addEventListener('click', () => {
-  const q = questions[current];
-  if (!q) return alert("No question loaded.");
-  
-  let rawText = `Q${current+1} (Correct: ${q.correct})\n` +
-                `Question: ${q.question}\n` +
-                q.options.map((o, i) => `Opt${i+1}: ${o}`).join('\n');
-  
-  alert(rawText);
-});
+  // Robust CSV row handling: accept arrays or single-string rows, tolerate extra whitespace,
+  // and also handle cases where PapaParse returned a 1-element row containing commas.
+  questions = [];
+  for(const r of rows){
+    if(!r) continue;
+    let cols = [];
+    if(Array.isArray(r)){
+      cols = r.map(c => (c===null || c===undefined) ? '' : String(c));
+      // If PapaParse returned a single string in the array (length===1) but it contains commas,
+      // split that string to recover the columns.
+      if(cols.length === 1 && cols[0].includes(',')){
+        cols = cols[0].split(',');
+      }
+    } else {
+      // r is not an array (rare), try to split it as CSV row
+      cols = String(r).split(',');
+    }
 
+    // Trim and decode HTML entities for each column
+    cols = cols.map(c => decodeHTML((c||'').toString().trim()));
 
-lockNav(true);
+    // Need at least 7 columns: question + 5 opts + correct index
+    if(cols.length < 7) continue;
+
+    const q = cols[0];
+    const opts = [cols[1]||'', cols[2]||'', cols[3]||'', cols[4]||'', cols[5]||''];
+    const corrRaw = (cols[6]||'').toString().replace(/[^0-9]/g,'');
+    const corr = corrRaw === '' ? NaN : parseInt(corrRaw, 10);
+
+    if(!q) continue;
+    if(!(corr >= 1 && corr <= 5)) continue;
+
+    questions.push({question: q, options: opts, correct: corr});
+  }
+
+  // Reset state
+  answers = new Array(questions.length).fill(null);
+  visited = new Array(questions.length).fill(false);
+  review = new Array(questions.length).fill(false);
+
+  // Update UI & controls
+  countEl.textContent = questions.length;
+  buildNav();
+  startBtn.disabled = questions.length === 0;
+  submitBtn.disabled = true;
+  exportBtn.disabled = true;
+  questionArea.style.display = 'none';
+  submitted = false;
+  updateSidebarScore();
+
+  // Lock navigation until test is started
+  lockNav(true);
 }
+lockNav(true);
+
 
 function buildNav(){
   navPanel.innerHTML=''; for(let i=0;i<questions.length;i++){ const btn=document.createElement('button'); btn.className='qbtn not-visited'; btn.textContent=i+1; btn.dataset.idx=i; btn.disabled=true; btn.addEventListener('click',()=>{ goTo(i); }); navPanel.appendChild(btn); }
@@ -286,6 +321,43 @@ document.getElementById('showRaw').addEventListener('click', () => {
 
 
 lockNav(true);
+
+const pasteLabel = document.getElementById('pasteLabel');
+const pasteArea = document.getElementById('pasteArea');
+const csvTextarea = document.getElementById('csvTextarea');
+const loadPasteBtn = document.getElementById('loadPasteBtn');
+const cancelPasteBtn = document.getElementById('cancelPasteBtn');
+
+if (pasteLabel) {
+  pasteLabel.addEventListener('click', () => {
+    pasteArea.style.display = 'block';
+    csvTextarea.value = '';
+    csvTextarea.focus();
+  });
+}
+
+if (cancelPasteBtn) {
+  cancelPasteBtn.addEventListener('click', () => {
+    pasteArea.style.display = 'none';
+  });
+}
+
+if (loadPasteBtn) {
+  loadPasteBtn.addEventListener('click', () => {
+    const text = csvTextarea.value.trim();
+    if (!text) {
+      alert("Please paste CSV content first.");
+      return;
+    }
+    Papa.parse(text, {
+      skipEmptyLines: true,
+      complete: function(results) {
+        loadQuestions(results.data);
+        pasteArea.style.display = 'none';
+      }
+    });
+  });
+}
 </script>
 </body>
 </html>
